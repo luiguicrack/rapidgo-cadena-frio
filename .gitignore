@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.venv/
+.env
+.pytest_cache/
+.idea/
+.vscode/
+# Data Lake local (se versiona solo el README)
+datalake/raw/
+datalake/processed/
+datalake/curated/
+datalake/checkpoints/
+airflow/logs/

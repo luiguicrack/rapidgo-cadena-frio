@@ -1,0 +1,10 @@
+{
+  "event_id": "b3f1c2a4-7d2e-4a51-9c3e-2f0a6b1d8e11",
+  "team_id": "grupo-1-cadena-frio",
+  "order_id": "ORD-000123",
+  "vehicle_id": "VEH-04",
+  "product_type": "refrigerado",
+  "temperature_c": 9.4,
+  "humidity_pct": 62.5,
+  "event_ts": "2026-10-16T14:32:05Z"
+}

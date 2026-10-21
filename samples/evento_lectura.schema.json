@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Lectura de cadena de frío – RapidGo Grupo 1",
+  "type": "object",
+  "required": ["event_id", "team_id", "order_id", "vehicle_id", "product_type", "temperature_c", "humidity_pct", "event_ts"],
+  "additionalProperties": false,
+  "properties": {
+    "event_id": {"type": "string", "description": "UUID único del evento"},
+    "team_id": {"type": "string", "const": "grupo-1-cadena-frio", "description": "Identifica al equipo"},
+    "order_id": {"type": "string", "pattern": "^ORD-[0-9]{6}$"},
+    "vehicle_id": {"type": "string", "pattern": "^VEH-[0-9]{2}$"},
+    "product_type": {"type": "string", "enum": ["refrigerado", "congelado"]},
+    "temperature_c": {"type": "number", "minimum": -40, "maximum": 60},
+    "humidity_pct": {"type": "number", "minimum": 0, "maximum": 100},
+    "event_ts": {"type": "string", "format": "date-time", "description": "Momento de la lectura, UTC (ISO 8601)"}
+  }
+}
