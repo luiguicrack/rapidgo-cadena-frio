@@ -13,4 +13,4 @@
 **Repositorio:** https://github.com/luiguicrack/rapidgo-cadena-frio  
 **Tablero:** proyecto GitHub *RapidGo - Cadena de frío*.  
 **Planificación:** 12 Issues distribuidas entre las cuatro semanas.  
-**Release esperada:** `v0.1.0-foundation`.
+**Release publicada:** `v0.1.0-foundation`.
