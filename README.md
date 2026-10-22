@@ -2,7 +2,7 @@
 
 **Proyecto final de aula – Línea de Profundización I: Big Data**  
 **Variante 3: Cadena de frío**  
-**Release de Semana 1:** `v0.1.0-foundation` (preparación de la entrega)
+**Release de Semana 1:** `v0.1.0-foundation`
 
 ---
 
