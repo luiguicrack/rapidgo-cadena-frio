@@ -36,3 +36,26 @@ services:
         /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists \
           --topic rapidgo.coldchain.readings --partitions 3 --replication-factor 1
         /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092 --describe --topic rapidgo.coldchain.readings
+  spark-streaming:
+    image: apache/spark:3.5.1-python3
+    container_name: coldchain-spark-streaming
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+    entrypoint: ["/opt/spark/bin/spark-submit"]
+    command:
+      - "--master"
+      - "local[*]"
+      - "--conf"
+      - "spark.jars.ivy=/tmp/.ivy2"
+      - "--packages"
+      - "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.1"
+      - "/opt/spark/app/streaming.py"
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      KAFKA_TOPIC: rapidgo.coldchain.readings
+      KAFKA_STARTING_OFFSETS: earliest
+      DATALAKE_PATH: /opt/rapidgo/datalake
+    volumes:
+      - ./spark:/opt/spark/app:ro
+      - ./datalake:/opt/rapidgo/datalake
