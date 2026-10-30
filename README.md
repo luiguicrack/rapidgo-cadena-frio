@@ -2,7 +2,8 @@
 
 **Proyecto final de aula – Línea de Profundización I: Big Data**  
 **Variante 3: Cadena de frío**  
-**Release de Semana 1:** `v0.1.0-foundation`
+**Release de Semana 1:** `v0.1.0-foundation`  
+**Semana 2:** Implementación del pipeline de eventos y procesamiento inicial.
 
 ---
 
@@ -10,315 +11,500 @@
 
 RapidGo es una plataforma de entregas que necesita monitorear las condiciones de transporte de productos refrigerados y congelados. Durante el traslado, las variaciones de temperatura pueden afectar la calidad de los productos y generar pérdidas económicas.
 
-Este proyecto propone una arquitectura Big Data para capturar lecturas de temperatura y humedad, transportarlas mediante Apache Kafka, procesarlas con Apache Spark Structured Streaming y almacenarlas en un Data Lake. Los indicadores y las alertas permitirán identificar posibles incumplimientos de las condiciones de la cadena de frío.
+Este proyecto desarrolla una arquitectura Big Data para generar lecturas de sensores, transportarlas mediante Apache Kafka, procesarlas con Apache Spark Structured Streaming y almacenarlas en un Data Lake utilizando Parquet.
 
-En esta primera semana se establece la arquitectura, el contrato de eventos, los indicadores iniciales, las reglas de alerta y la organización del repositorio. La implementación progresiva del pipeline se realizará en las siguientes semanas.
+El pipeline contempla la validación de eventos, la clasificación de lecturas según las condiciones de temperatura, la generación de alertas y el cálculo de indicadores operacionales.
+
+Durante la Semana 1 se definieron la arquitectura, el contrato de eventos, los indicadores iniciales y la organización del repositorio. En la Semana 2 se avanzó en la implementación del productor, la integración con Kafka, el procesamiento con Spark, la persistencia de datos y la automatización de pruebas.
 
 ## 2. Objetivos
 
 ### Objetivo general
 
-Diseñar e implementar progresivamente un pipeline Big Data para monitorear la cadena de frío de RapidGo mediante eventos de sensores, procesamiento distribuido, almacenamiento e indicadores operacionales.
+Implementar progresivamente un pipeline Big Data para monitorear la cadena de frío de RapidGo mediante eventos de sensores, procesamiento en flujo, almacenamiento e indicadores operacionales.
 
 ### Objetivos específicos
 
-- Definir un contrato JSON para las lecturas de temperatura y humedad.
-- Utilizar Kafka para transportar eventos de monitoreo.
-- Definir indicadores y reglas de alerta para detectar condiciones fuera de rango.
-- Preparar el procesamiento mediante Spark Structured Streaming.
-- Organizar el almacenamiento de datos en un Data Lake.
-- Planificar la orquestación con Apache Airflow.
-- Mantener trazabilidad del trabajo mediante GitHub, Issues, Kanban y releases.
+- Definir y utilizar un contrato JSON para las lecturas de temperatura y humedad.
+- Generar eventos simulados asociados a pedidos y vehículos.
+- Transportar los eventos mediante Apache Kafka.
+- Procesar los datos con Apache Spark Structured Streaming.
+- Validar los eventos y clasificar las lecturas según sus condiciones de temperatura.
+- Definir indicadores y reglas de alerta para detectar incumplimientos.
+- Persistir eventos y resultados en formato Parquet.
+- Utilizar checkpoints para permitir la recuperación del procesamiento en flujo.
+- Incorporar pruebas automatizadas e integración continua mediante GitHub Actions.
+- Mantener la trazabilidad mediante GitHub, Issues, Pull Requests, Kanban y releases.
 
 ## 3. Equipo de trabajo
 
-| Integrante | Responsabilidades iniciales |
+| Integrante | Responsabilidades principales |
 |---|---|
-| Brayan Ramírez | Coordinación del repositorio, Docker Compose y documentación de ejecución. |
-| Sebastián Bernal | Contrato JSON, eventos, KPIs y reglas de alerta. |
-| Steban Blanco | Arquitectura, configuración de Kafka y documentación técnica. |
+| Brayan Ramírez | Productor de lecturas, integración con Kafka y documentación de ejecución. |
+| Sebastián Bernal | Contrato de eventos, procesamiento con Spark y componentes relacionados con indicadores y reglas de negocio. |
+| Steban Blanco | Arquitectura, configuración de infraestructura y documentación técnica. |
 
-Las responsabilidades son una propuesta inicial y pueden ajustarse según los acuerdos del equipo. La participación se evidenciará mediante las Issues, los commits y los Pull Requests correspondientes.
+Las responsabilidades y contribuciones se evidencian mediante las Issues, las ramas, los commits y los Pull Requests del repositorio.
 
 ## 4. Problema de negocio
 
-Durante el transporte de productos refrigerados o congelados, es necesario mantener la temperatura dentro de rangos adecuados. Una temperatura excesiva o demasiado baja puede comprometer la conservación de la mercancía.
+Durante el transporte de productos refrigerados o congelados es necesario mantener la temperatura dentro de los rangos adecuados. Una temperatura excesiva o demasiado baja puede comprometer la conservación de la mercancía.
 
-La solución permitirá registrar las lecturas de los sensores, detectar desviaciones, calcular indicadores por ventanas de tiempo y conservar los resultados para su consulta y análisis.
+La solución registra lecturas de sensores, valida los eventos recibidos, identifica desviaciones de temperatura y almacena los resultados para su consulta y análisis.
 
 ### Valor esperado
 
 - Identificar condiciones anormales durante el transporte.
 - Medir la frecuencia de las lecturas fuera de rango.
 - Detectar exposiciones prolongadas a temperaturas inadecuadas.
-- Proporcionar datos para mejorar el control operacional y la trazabilidad.
+- Conservar un historial de lecturas y resultados procesados.
+- Facilitar la trazabilidad de las condiciones de transporte.
+- Proporcionar información para mejorar el control operacional.
 
-## 5. Arquitectura propuesta
+## 5. Arquitectura del proyecto
 
-La arquitectura de la variante Cadena de frío se organiza en las siguientes etapas:
+La arquitectura de RapidGo se organiza en las siguientes etapas:
 
 1. **Producer:** genera eventos simulados de sensores asociados a pedidos y vehículos.
 2. **Apache Kafka:** recibe y distribuye los eventos mediante el topic `rapidgo.coldchain.readings`.
-3. **Apache Spark Structured Streaming:** consumirá los eventos, validará los datos, calculará indicadores y aplicará reglas de alerta.
-4. **Data Lake:** almacenará los eventos y resultados en las capas Raw, Processed y Curated.
-5. **Apache Airflow:** permitirá orquestar procesos de validación, agregación y generación de reportes.
-6. **Indicadores y alertas:** mostrarán el comportamiento de las condiciones de la cadena de frío.
+3. **Apache Spark Structured Streaming:** consume los eventos, interpreta el JSON, valida los datos, clasifica las lecturas y ejecuta consultas en flujo.
+4. **Data Lake:** almacena los eventos y resultados en formato Parquet, organizados en las zonas Raw, Processed y Curated.
+5. **Checkpoints:** conservan el estado de progreso de las consultas de streaming.
+6. **Pruebas automatizadas:** verifican las reglas de negocio y el comportamiento implementado.
+7. **GitHub Actions:** ejecuta validaciones automatizadas asociadas al repositorio.
+8. **Apache Airflow:** queda contemplado para la etapa posterior de orquestación.
 
 ### Diagrama de arquitectura
 
 ![Arquitectura de RapidGo - Cadena de frío](docs/arquitectura.png)
 
-La arquitectura descrita corresponde al diseño inicial. Los componentes de procesamiento, almacenamiento y orquestación se implementarán y validarán progresivamente durante las siguientes semanas.
-
-## 6. Tecnologías propuestas
+## 6. Tecnologías utilizadas
 
 | Tecnología | Función |
 |---|---|
-| Python | Generación y transformación de eventos. |
+| Python | Generación de eventos, reglas de negocio y pruebas. |
 | Apache Kafka | Transporte de eventos mediante un topic particionado. |
 | Apache Spark Structured Streaming | Procesamiento de eventos en flujo. |
-| Parquet | Formato previsto para almacenar datos procesados. |
+| Parquet | Almacenamiento columnar de eventos y resultados. |
 | Data Lake | Organización de datos Raw, Processed y Curated. |
-| Apache Airflow | Orquestación de tareas de procesamiento. |
-| Docker Compose | Ejecución local de los servicios. |
-| Git y GitHub | Control de versiones, colaboración e Issues. |
-| GitHub Projects | Seguimiento del trabajo mediante Kanban. |
-| GitHub Actions | Integración continua prevista a partir de la Semana 2. |
+| Docker Compose | Configuración y ejecución local de los servicios. |
+| pytest | Ejecución de pruebas automatizadas. |
+| Git y GitHub | Control de versiones y colaboración. |
+| GitHub Projects | Seguimiento de tareas mediante Kanban. |
+| GitHub Actions | Integración continua. |
+| Apache Airflow | Tecnología prevista para la orquestación posterior. |
 
-## 7. Contrato del evento
+## 7. Contrato de eventos
 
-Los eventos representan lecturas de sensores relacionadas con un pedido y un vehículo. El esquema y el ejemplo inicial están disponibles en:
+Los eventos representan lecturas de temperatura y humedad relacionadas con un pedido, un vehículo y un tipo de producto.
+
+Los archivos de referencia son:
 
 - Esquema: [`samples/evento_lectura.schema.json`](samples/evento_lectura.schema.json)
 - Ejemplo: [`samples/evento_lectura_ejemplo.json`](samples/evento_lectura_ejemplo.json)
 
-El contrato debe permitir identificar el evento, relacionarlo con el pedido y el vehículo, registrar la fecha y hora de la lectura, e incluir las mediciones de temperatura y humedad.
+El contrato contempla los siguientes campos:
 
-### Ejemplo ilustrativo
+| Campo | Descripción |
+|---|---|
+| `event_id` | Identificador único del evento. |
+| `team_id` | Identificador del equipo productor. |
+| `order_id` | Identificador del pedido. |
+| `vehicle_id` | Identificador del vehículo. |
+| `product_type` | Tipo de producto: refrigerado o congelado. |
+| `temperature_c` | Temperatura registrada en grados Celsius. |
+| `humidity_pct` | Humedad relativa registrada. |
+| `event_ts` | Fecha y hora del evento. |
 
-El siguiente ejemplo muestra la estructura conceptual del evento. El archivo de `samples/` es la referencia definitiva del contrato del proyecto.
+Los nombres, tipos, restricciones y valores permitidos definitivos son los establecidos en los archivos del contrato.
 
-```json
-{
-  "event_id": "evt-000001",
-  "order_id": "PED-1001",
-  "vehicle_id": "VEH-001",
-  "timestamp": "2026-10-21T10:00:00Z",
-  "temperature_c": 5.2,
-  "humidity_pct": 65.0,
-  "product_type": "refrigerado"
-}
-```
+### Generación de eventos
 
-Los nombres y tipos definitivos de los campos deben coincidir con `evento_lectura.schema.json` y `evento_lectura_ejemplo.json`.
+El productor permite generar lecturas simuladas y publicarlas en Kafka. También permite configurar parámetros de ejecución, como la cantidad de eventos y el intervalo entre publicaciones.
+
+La ejecución del productor se realiza como módulo de Python para resolver correctamente las importaciones del paquete.
 
 ## 8. Kafka: topic, key y particiones
 
-| Parámetro | Configuración inicial |
+| Parámetro | Configuración |
 |---|---|
 | Topic | `rapidgo.coldchain.readings` |
 | Key | `order_id` |
 | Número de particiones | 3 |
 | Factor de replicación local | 1 |
+| Broker desde el host | `localhost:29092` |
+| Broker dentro de Docker Compose | `kafka:9092` |
 
-### Justificación de la decisión
+### Justificación técnica
 
-Se selecciona `order_id` como key para que las lecturas de un mismo pedido se asignen a una misma partición, conservando el orden dentro de ella.
+Se utiliza `order_id` como clave de Kafka para que las lecturas de un mismo pedido se asignen a la misma partición, manteniendo su orden relativo dentro de ella.
 
-Se proponen tres particiones para permitir procesamiento paralelo entre pedidos. El factor de replicación 1 se utiliza en el entorno local inicial y no proporciona tolerancia a la pérdida de un broker.
+Las tres particiones permiten distribuir el procesamiento entre diferentes pedidos. El factor de replicación 1 corresponde al entorno local y no ofrece tolerancia a la pérdida de un broker.
 
-La decisión está documentada en [`docs/decisions/ADR-001-key-y-particiones-kafka.md`](docs/decisions/ADR-001-key-y-particiones-kafka.md).
+La decisión inicial está documentada en [`docs/decisions/ADR-001-key-y-particiones-kafka.md`](docs/decisions/ADR-001-key-y-particiones-kafka.md).
 
-### Evidencia inicial
+### Evidencias de ejecución
 
-Durante la preparación de la Semana 1:
+Durante las pruebas del proyecto se obtuvieron los siguientes resultados:
 
-- `docker compose config --quiet` terminó sin errores.
-- `docker compose up -d` inició el servicio Kafka.
-- El servicio de inicialización creó `rapidgo.coldchain.readings`.
-- La consulta de descripción del topic confirmó tres particiones y factor de replicación 1.
+- `docker compose config --quiet` finalizó sin errores.
+- Docker Compose inició los servicios de Kafka y Spark.
+- Se verificó el topic `rapidgo.coldchain.readings`.
+- La descripción del topic confirmó tres particiones y factor de replicación 1.
+- Una ejecución del productor publicó 20 eventos.
+- En esa ejecución, los eventos se distribuyeron entre las particiones de la siguiente manera:
 
-Esta evidencia verifica la configuración inicial del topic; todavía no demuestra el comportamiento del productor ni el balance real de los eventos.
+| Partición | Eventos observados |
+|---|---:|
+| 0 | 3 |
+| 1 | 3 |
+| 2 | 14 |
+| **Total** | **20** |
 
-## 9. KPIs iniciales
+La distribución anterior corresponde a una ejecución concreta. No implica que las particiones deban recibir exactamente la misma cantidad de eventos en cada prueba.
 
-Los siguientes indicadores se proponen para el monitoreo de la cadena de frío:
+## 9. Procesamiento con Spark Structured Streaming
 
-| KPI | Descripción | Unidad o ventana |
+El procesamiento implementado se encuentra en `spark/streaming.py`.
+
+La aplicación consume eventos de Kafka y ejecuta consultas de streaming para gestionar las lecturas y producir resultados en el Data Lake.
+
+### 9.1. Lectura y almacenamiento Raw
+
+La aplicación lee los mensajes del topic y conserva los eventos recibidos en:
+
+`datalake/raw/events`
+
+Esta zona permite conservar los datos de entrada antes de considerar únicamente los registros válidos para el procesamiento posterior.
+
+### 9.2. Interpretación y validación
+
+Los mensajes JSON se interpretan utilizando el esquema de eventos y se convierten los campos temporales necesarios para el procesamiento.
+
+Entre las validaciones implementadas se encuentran:
+
+- Presencia de los campos requeridos.
+- Formato del identificador del evento.
+- Identificador del equipo esperado.
+- Formato del identificador del pedido.
+- Formato del identificador del vehículo.
+- Tipo de producto permitido.
+- Validez de la fecha y hora.
+- Límites admitidos para temperatura y humedad.
+
+Los registros que no cumplen las validaciones se escriben en:
+
+`datalake/processed/rejected`
+
+### 9.3. Clasificación de lecturas
+
+Las lecturas válidas se clasifican mediante las transformaciones definidas en el procesamiento.
+
+Se calculan campos como:
+
+- `is_critical`: indica si la lectura cumple la condición de temperatura crítica.
+- `is_out_of_range`: indica si la lectura está fuera del rango permitido.
+- `temperature_status`: clasifica la lectura como `critica`, `fuera_rango` u `ok`.
+- `event_date`: fecha utilizada para organizar los resultados.
+
+Los registros procesados se escriben en:
+
+`datalake/processed/readings`
+
+Los datos se particionan por `event_date`.
+
+### 9.4. Generación de alertas
+
+La consulta de alertas identifica lecturas cuyo estado de temperatura no es `ok`.
+
+Los resultados incluyen información del evento, pedido, vehículo, tipo de producto, temperatura, fecha del evento y tipo de alerta.
+
+Los resultados se escriben en:
+
+`datalake/curated/alerts`
+
+**Nota:** la integración completa de la regla de exposición prolongada y su validación de extremo a extremo deben verificarse antes de afirmar que todas las reglas de alerta requeridas están implementadas en el flujo de Spark.
+
+### 9.5. Indicadores
+
+La aplicación incluye una consulta de indicadores que utiliza ventanas temporales de cinco minutos y una marca de agua de diez minutos.
+
+Entre las métricas calculadas se encuentran:
+
+- Temperatura promedio.
+- Cantidad de lecturas.
+- Cantidad de lecturas fuera de rango.
+- Cantidad de lecturas críticas.
+- Porcentaje de lecturas fuera de rango.
+
+Los resultados se escriben en:
+
+`datalake/curated/kpis`
+
+La agregación actualmente descrita agrupa por ventana temporal y tipo de producto. El cálculo del promedio por vehículo debe verificarse o ajustarse para cumplir ese requisito específico de la guía.
+
+## 10. Reglas de temperatura y alertas
+
+Los rangos de referencia definidos para el proyecto son:
+
+| Tipo de producto | Temperatura mínima | Temperatura máxima |
+|---|---:|---:|
+| Refrigerado | 2 °C | 8 °C |
+| Congelado | -25 °C | -15 °C |
+
+### 10.1. Temperatura crítica
+
+Los umbrales definidos en las reglas de negocio son:
+
+- **Refrigerado:** temperatura inferior a `-1 °C` o superior a `11 °C`.
+- **Congelado:** temperatura superior a `-12 °C`.
+
+Estos umbrales se diferencian de los rangos normales de conservación y permiten identificar situaciones de mayor severidad.
+
+### 10.2. Exposición prolongada
+
+El proyecto contempla generar una alerta cuando la temperatura permanezca continuamente fuera del rango permitido durante al menos diez minutos.
+
+La lógica de negocio se encuentra en `spark/alert_rules.py`.
+
+Esta lógica considera el tipo de producto, la secuencia temporal de las lecturas y el reinicio de la exposición cuando aparece una lectura normal.
+
+La existencia de pruebas unitarias para esta regla no significa, por sí sola, que la alerta ya esté integrada en la consulta de Spark. Esa integración debe verificarse de forma independiente.
+
+## 11. Data Lake y persistencia
+
+Los resultados se organizan en las siguientes zonas:
+
+| Zona | Ruta | Propósito |
 |---|---|---|
-| Temperatura promedio | Promedio de temperatura de las lecturas recibidas. | °C por ventana de 5 minutos. |
-| Lecturas fuera de rango | Cantidad y porcentaje de lecturas que incumplen el rango de temperatura definido para el producto. | Número y porcentaje por ventana. |
-| Duración de exposición fuera de rango | Tiempo continuo durante el cual un pedido permanece fuera del rango permitido. | Minutos. |
+| Raw | `datalake/raw/events` | Conservar los eventos recibidos. |
+| Processed | `datalake/processed/readings` | Almacenar las lecturas válidas y clasificadas. |
+| Processed | `datalake/processed/rejected` | Conservar los registros rechazados por las validaciones. |
+| Curated | `datalake/curated/alerts` | Almacenar las alertas generadas. |
+| Curated | `datalake/curated/kpis` | Almacenar los indicadores calculados. |
 
-Estos indicadores son definiciones iniciales. Su cálculo y validación se desarrollarán durante la implementación del pipeline.
+Los datos se persisten en formato Parquet. Las lecturas procesadas y las alertas se organizan por fecha del evento.
 
-## 10. Reglas de alerta iniciales
+### Checkpoints
 
-Los umbrales siguientes son valores iniciales de diseño y podrán ajustarse después de evaluar los datos simulados.
+Las consultas de streaming utilizan rutas de checkpoint para conservar información del progreso de procesamiento y facilitar la recuperación de las consultas.
 
-### Alerta 1: temperatura crítica
+Los checkpoints se encuentran asociados a las salidas correspondientes. Durante las pruebas no deben eliminarse indiscriminadamente, ya que contienen información necesaria para el estado del procesamiento.
 
-- Para productos refrigerados, se considera crítica una lectura inferior a `-1 °C` o superior a `11 °C`.
-- Para productos congelados, se considera crítica una lectura superior a `-12 °C`.
+## 12. Pruebas automatizadas e integración continua
 
-Los rangos de referencia son de `2 °C` a `8 °C` para productos refrigerados y de `-25 °C` a `-15 °C` para productos congelados.
+El proyecto incorpora pruebas automatizadas mediante `pytest` y un workflow de GitHub Actions.
 
-### Alerta 2: exposición prolongada
+### Ejecutar las pruebas
 
-Se generará una alerta cuando la temperatura permanezca continuamente fuera del rango permitido durante `10 minutos`.
+Desde la raíz del repositorio:
 
-La evaluación debe considerar el tipo de producto y la secuencia temporal de las lecturas. Estas reglas están definidas como criterios iniciales; su implementación se realizará en las siguientes semanas.
+```powershell
+python -m pytest -q
+```
 
-## 11. Estructura del repositorio
+La ejecución anterior registró **51 pruebas aprobadas** en una de las validaciones realizadas. El resultado debe confirmarse nuevamente después de cada modificación relevante.
+
+### Validar Docker Compose
+
+```powershell
+docker compose config --quiet
+```
+
+### Revisar el estado de Git
+
+```powershell
+git status --short
+```
+
+### Revisar los cambios antes de un commit
+
+```powershell
+git diff --check
+git diff
+```
+
+### Integración continua
+
+El workflow de CI permite ejecutar las validaciones automatizadas cuando se realizan los eventos configurados en GitHub Actions.
+
+Los resultados de las ejecuciones pueden consultarse en la pestaña **Actions** del repositorio.
+
+Cada Pull Request debe revisarse antes de integrarse en `main`, comprobando las pruebas, la configuración y las evidencias relacionadas con la funcionalidad modificada.
+
+## 13. Requisitos previos
+
+Para ejecutar el proyecto localmente se requiere:
+
+- Git.
+- Docker Desktop con Docker Compose.
+- Python compatible con las dependencias del proyecto.
+- Las dependencias especificadas en `requirements.txt`.
+- Conexión a Internet para descargar las imágenes de Docker y las dependencias necesarias.
+
+## 14. Ejecución local
+
+Los siguientes comandos se ejecutan desde la raíz del repositorio.
+
+### 14.1. Validar la configuración
+
+```powershell
+docker compose config --quiet
+```
+
+### 14.2. Iniciar los servicios
+
+```powershell
+docker compose up -d
+```
+
+### 14.3. Consultar el estado de los contenedores
+
+```powershell
+docker compose ps
+```
+
+### 14.4. Consultar los logs de Kafka y Spark
+
+```powershell
+docker compose logs --tail=50 kafka
+docker compose logs --tail=50 spark-streaming
+```
+
+### 14.5. Verificar el topic
+
+```powershell
+docker exec coldchain-kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --describe --topic rapidgo.coldchain.readings
+```
+
+### 14.6. Publicar eventos de prueba
+
+El siguiente comando publica 20 eventos, con un intervalo de 0,2 segundos entre publicaciones:
+
+```powershell
+python -m producer.producer --bootstrap localhost:29092 --topic rapidgo.coldchain.readings --max-eventos 20 --intervalo 0.2
+```
+
+La salida del productor permite comprobar cuántos eventos fueron enviados y cómo se distribuyeron entre las particiones.
+
+### 14.7. Ejecutar las pruebas automatizadas
+
+```powershell
+python -m pytest -q
+```
+
+### 14.8. Detener los servicios
+
+```powershell
+docker compose down
+```
+
+Este comando detiene y elimina los contenedores y la red creados por Docker Compose. No debe confundirse con un borrado general de los archivos del repositorio.
+
+Antes de ejecutar operaciones de limpieza adicionales, verifica las rutas de datos y checkpoints para evitar perder evidencias de ejecución.
+
+## 15. Estructura del repositorio
 
 ```text
 rapidgo-cadena-frio/
 ├── .github/
 │   └── workflows/
+│       └── ci.yml
 ├── airflow/
 │   └── dags/
 ├── datalake/
-│   └── README.md
+│   ├── README.md
+│   ├── raw/
+│   ├── processed/
+│   └── curated/
 ├── docs/
 │   ├── arquitectura.png
 │   ├── checkpoints/
-│   │   └── semana1.md
+│   │   ├── semana1.md
+│   │   └── semana2.md
 │   └── decisions/
-│       └── ADR-001-key-y-particiones-kafka.md
+│       ├── ADR-001-key-y-particiones-kafka.md
+│       └── ADR-002-checkpoints-y-zonas-datalake.md
 ├── producer/
+│   ├── generador.py
+│   └── producer.py
 ├── samples/
 │   ├── evento_lectura.schema.json
 │   └── evento_lectura_ejemplo.json
 ├── spark/
+│   ├── alert_rules.py
+│   └── streaming.py
 ├── tests/
+│   └── test_reglas_alerta.py
 ├── .gitignore
 ├── docker-compose.yml
 ├── README.md
 └── requirements.txt
 ```
 
-La estructura contiene los espacios de trabajo previstos para los componentes del pipeline. Los archivos de implementación se incorporarán durante las siguientes semanas.
+La estructura representa los componentes principales del proyecto. La presencia de directorios o documentos de referencia no implica que todas las funcionalidades asociadas estén terminadas.
 
-## 12. Requisitos previos
+## 16. Organización y trazabilidad del trabajo
 
-Para ejecutar la infraestructura local inicial se requiere:
+El equipo utiliza GitHub Issues, Pull Requests y un tablero Kanban para organizar el desarrollo.
 
-- Git.
-- Docker Desktop con Docker Compose.
-- Conexión a Internet para descargar la imagen de Kafka la primera vez.
+Las tareas se distribuyen entre cuatro semanas:
 
-Python será necesario para las etapas de generación, procesamiento y pruebas del proyecto.
+- **Semana 1:** diseño, arquitectura, contrato de eventos, indicadores, reglas de negocio y organización del repositorio.
+- **Semana 2:** productor, integración con Kafka, procesamiento con Spark, persistencia, checkpoints y pruebas automatizadas.
+- **Semana 3:** orquestación con Airflow, controles de calidad y recuperación ante fallos.
+- **Semana 4:** integración final, validación de extremo a extremo y publicación de la versión estable.
 
-## 13. Ejecución local inicial
+Las contribuciones deben quedar registradas en las ramas, commits, Issues y Pull Requests correspondientes a cada integrante.
 
-Desde la raíz del repositorio, ejecutar:
+## 17. Documentación y entregas
 
-### Validar la configuración
+| Documento o entrega | Propósito |
+|---|---|
+| `docs/checkpoints/semana1.md` | Evidencias y decisiones de la primera semana. |
+| `docs/checkpoints/semana2.md` | Evidencias de ejecución y avances de la segunda semana. |
+| `docs/decisions/ADR-001-key-y-particiones-kafka.md` | Justificación de la clave y las particiones de Kafka. |
+| `docs/decisions/ADR-002-checkpoints-y-zonas-datalake.md` | Decisión técnica relacionada con checkpoints y zonas del Data Lake. |
+| `samples/evento_lectura.schema.json` | Contrato JSON de los eventos. |
+| `samples/evento_lectura_ejemplo.json` | Ejemplo de evento. |
+| `docs/arquitectura.png` | Diagrama de arquitectura. |
 
-```powershell
-docker compose config --quiet
-```
+### Releases previstas
 
-### Iniciar los servicios
-
-```powershell
-docker compose up -d
-```
-
-### Consultar el estado
-
-```powershell
-docker compose ps
-```
-
-### Consultar los logs de inicialización de Kafka
-
-```powershell
-docker compose logs kafka-init
-```
-
-### Verificar el topic
-
-```powershell
-docker exec coldchain-kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --describe --topic rapidgo.coldchain.readings
-```
-
-El entorno inicial valida la configuración de Docker y la creación del topic. La generación y el procesamiento de eventos se implementarán en las siguientes semanas.
-
-Para detener los servicios:
-
-```powershell
-docker compose down
-```
-
-Este comando detiene y elimina los contenedores y la red del proyecto. No elimina automáticamente todos los archivos locales del repositorio.
-
-## 14. Pruebas e integración continua
-
-La carpeta `tests/` está preparada para incorporar pruebas del contrato JSON, validaciones de eventos y reglas de negocio.
-
-La integración continua mediante GitHub Actions se desarrollará a partir de la Semana 2, incluyendo validación de sintaxis, ejecución de pruebas y validación de Docker Compose.
-
-Por tanto, en esta entrega inicial no se afirma que las pruebas automatizadas o el workflow estén funcionando.
-
-## 15. GitHub Project y planificación
-
-El trabajo se organiza en el proyecto GitHub **RapidGo - Cadena de frío**, mediante un tablero Kanban con las columnas Backlog, Ready, In Progress, Review y Done.
-
-El plan contiene al menos 12 Issues distribuidas entre las cuatro semanas:
-
-- **Semana 1:** diseño, arquitectura, contrato, KPIs, alertas y organización.
-- **Semana 2:** productor, Kafka, Spark Structured Streaming, almacenamiento y CI.
-- **Semana 3:** orquestación con Airflow, calidad de datos y recuperación ante fallos.
-- **Semana 4:** integración, validación final y publicación de la versión estable.
-
-El tablero y las Issues permiten asignar responsables y mantener la trazabilidad del trabajo.
-
-## 16. Documentación y entregas
-
-| Entrega | Release esperada | Alcance |
+| Entrega | Versión prevista | Alcance |
 |---|---|---|
 | Semana 1 | `v0.1.0-foundation` | Diseño, arquitectura y organización. |
 | Semana 2 | `v0.2.0-streaming` | Pipeline de eventos y procesamiento inicial. |
 | Semana 3 | Según la guía del proyecto | Orquestación y controles de calidad. |
 | Semana 4 | `v1.0.0` | Integración y validación final. |
 
-Documentos principales:
+Las versiones de Semana 2 y posteriores deben publicarse una vez cumplidos los requisitos de la entrega y verificadas las evidencias correspondientes.
 
-- [Checkpoint de Semana 1](docs/checkpoints/semana1.md)
-- [ADR-001: key y particiones de Kafka](docs/decisions/ADR-001-key-y-particiones-kafka.md)
-- [Esquema JSON](samples/evento_lectura.schema.json)
-- [Ejemplo de evento](samples/evento_lectura_ejemplo.json)
-- [Diagrama de arquitectura](docs/arquitectura.png)
+## 18. Limitaciones y trabajo pendiente
 
-## 17. Contribuciones del equipo
+Aunque el productor, Kafka, Spark, la persistencia Parquet y las pruebas automatizadas ya presentan avances verificables, todavía deben completarse o comprobarse los siguientes puntos antes de considerar finalizado el pipeline:
 
-| Integrante | Responsabilidades iniciales | Issues / PR |
-|---|---|---|
-| Brayan Ramírez | Coordinación del repositorio, Docker Compose y documentación de ejecución. | Registrar números reales de Issues y PR. |
-| Sebastián Bernal | Contrato JSON, eventos, KPIs y reglas de alerta. | Registrar números reales de Issues y PR. |
-| Steban Blanco | Arquitectura, Kafka y documentación técnica. | Registrar números reales de Issues y PR. |
+- Confirmar que el KPI de temperatura promedio se agrupa por vehículo, además de la ventana temporal requerida.
+- Integrar y validar de extremo a extremo la alerta por exposición prolongada.
+- Verificar que las alertas críticas y las de exposición prolongada se produzcan correctamente con eventos de prueba controlados.
+- Confirmar la recuperación de las consultas después de reinicios, utilizando sus checkpoints.
+- Validar los resultados almacenados en Parquet y contrastarlos con los eventos publicados.
+- Mantener actualizado el checkpoint de Semana 2 con resultados reales.
+- Documentar la decisión técnica de ADR-002 con base en la ejecución observada.
+- Ejecutar las pruebas y comprobar el estado de CI después de los cambios.
+- Desarrollar la orquestación con Airflow en la etapa correspondiente.
+- Realizar una validación integral antes de publicar la versión estable.
 
-Esta tabla debe actualizarse con las asignaciones y contribuciones reales del equipo a medida que avance el proyecto.
+## 19. Conclusión
 
-## 18. Limitaciones actuales y trabajo futuro
+El proyecto RapidGo establece una solución Big Data para monitorear la cadena de frío mediante eventos de sensores, transporte con Kafka, procesamiento con Spark Structured Streaming y persistencia en Parquet.
 
-En la entrega de Semana 1 se ha preparado la base documental y la infraestructura local inicial de Kafka. Todavía no se considera implementado el pipeline completo.
+Los avances de la Semana 2 permiten ejecutar y observar componentes fundamentales del pipeline, mantener los resultados organizados por zonas y ejecutar pruebas automatizadas. La siguiente etapa consiste en cerrar las validaciones funcionales pendientes, integrar las reglas de alerta en el flujo completo y fortalecer la recuperación y la orquestación.
 
-El trabajo futuro contempla:
-
-- Implementar el productor de lecturas.
-- Consumir y transformar eventos con Spark Structured Streaming.
-- Calcular los KPIs y generar las alertas.
-- Persistir resultados en Parquet y configurar checkpoints.
-- Incorporar pruebas automatizadas y GitHub Actions.
-- Implementar la orquestación con Airflow.
-- Validar el comportamiento integral del pipeline y documentar los resultados.
+La evolución del proyecto se documenta mediante los checkpoints, las decisiones técnicas, las pruebas y las contribuciones registradas en GitHub.
 
 ---
 
-**Repositorio:** https://github.com/luiguicrack/rapidgo-cadena-frio
-
-**Variante:** 3 – Cadena de frío
-
-**Release de Semana 1 prevista:** `v0.1.0-foundation`
+**Repositorio:** https://github.com/luiguicrack/rapidgo-cadena-frio  
+**Variante:** 3 – Cadena de frío  
+**Equipo:** Brayan Ramírez, Sebastián Bernal y Steban Blanco
