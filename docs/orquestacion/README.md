@@ -136,13 +136,7 @@ Esto demuestra que la ejecución completó satisfactoriamente las tareas de veri
 
 ## 8. Evidencias
 
-Se incluyen las siguientes evidencias de funcionamiento:
-
-| Archivo | Descripción |
-|---|---|
-| docker-servicios.png | Estado de los contenedores Docker. |
-| dag-success.png | Ejecución exitosa del DAG en Airflow. |
-| airflow-tareas.png | Estado de las tareas del DAG en la interfaz gráfica. |
+<img width="1895" height="858" alt="evidencia_airflow_dag_exitoso" src="https://github.com/user-attachments/assets/2ce1d916-8480-48a4-90a6-03ec3b6f7aaa" />
 
 ## 9. Conclusiones
 
