@@ -59,3 +59,19 @@ services:
     volumes:
       - ./spark:/opt/spark/app:ro
       - ./datalake:/opt/rapidgo/datalake
+
+  airflow:
+    image: apache/airflow:2.10.5-python3.11
+    container_name: rapidgo-airflow
+    restart: unless-stopped
+    depends_on:
+      - kafka
+    ports:
+      - "8080:8080"
+    environment:
+      AIRFLOW__CORE__LOAD_EXAMPLES: "false"
+      AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: "true"
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./datalake:/opt/rapidgo/datalake:ro
+    command: standalone
