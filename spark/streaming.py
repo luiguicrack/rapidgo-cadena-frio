@@ -1,5 +1,6 @@
 """Procesamiento de lecturas de cadena de frío con Spark Structured Streaming."""
 
+import logging
 import os
 
 from pyspark.sql import SparkSession
@@ -8,10 +9,12 @@ from pyspark.sql.functions import (
     col,
     count,
     from_json,
+    isnan,
     lit,
     sum as spark_sum,
     to_date,
     to_timestamp,
+    trim,
     when,
     window,
 )
@@ -40,6 +43,7 @@ KPIS_PATH = f"{DATA_LAKE}/curated/kpis"
 CHECKPOINTS = f"{DATA_LAKE}/checkpoints/spark"
 
 TEAM_ID = "grupo-1-cadena-frio"
+LOGGER = logging.getLogger(__name__)
 
 UUID_PATTERN = (
     r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-"
@@ -171,15 +175,25 @@ def main():
     )
 
     # 4. Validar campos obligatorios, formatos y rangos básicos.
+    required_text_fields = (
+        "event_id",
+        "team_id",
+        "order_id",
+        "vehicle_id",
+        "product_type",
+        "event_ts",
+    )
+    missing_fields = None
+    for field in required_text_fields:
+        empty_field = col(field).isNull() | (trim(col(field)) == "")
+        missing_fields = (
+            empty_field if missing_fields is None
+            else missing_fields | empty_field
+        )
     missing_fields = (
-        col("event_id").isNull()
-        | col("team_id").isNull()
-        | col("order_id").isNull()
-        | col("vehicle_id").isNull()
-        | col("product_type").isNull()
+        missing_fields
         | col("temperature_c").isNull()
         | col("humidity_pct").isNull()
-        | col("event_ts").isNull()
     )
 
     validation_error = (
@@ -194,6 +208,10 @@ def main():
         .when(
             col("team_id") != TEAM_ID,
             lit("team_id no corresponde al equipo"),
+        )
+        .when(
+            col("message_key") != col("order_id"),
+            lit("la clave Kafka no coincide con order_id"),
         )
         .when(
             ~col("order_id").rlike(r"^ORD-[0-9]{6}$"),
@@ -212,11 +230,13 @@ def main():
             lit("event_ts no es una fecha valida"),
         )
         .when(
-            ~col("temperature_c").between(-40.0, 60.0),
+            isnan(col("temperature_c"))
+            | ~col("temperature_c").between(-40.0, 60.0),
             lit("temperature_c fuera de los limites del contrato"),
         )
         .when(
-            ~col("humidity_pct").between(0.0, 100.0),
+            isnan(col("humidity_pct"))
+            | ~col("humidity_pct").between(0.0, 100.0),
             lit("humidity_pct fuera de los limites del contrato"),
         )
     )
@@ -342,10 +362,37 @@ def main():
         .start()
     )
 
+    queries = (
+        raw_query,
+        rejected_query,
+        processed_query,
+        alerts_query,
+        kpis_query,
+    )
     print(f"Kafka: {KAFKA_BOOTSTRAP} | Topic: {KAFKA_TOPIC}")
     print("Consultas activas: Raw, Processed, rechazados, alertas y KPIs.")
 
-    spark.streams.awaitAnyTermination()
+    try:
+        # Propaga cualquier fallo para que el contenedor termine con error.
+        # Docker reiniciará Spark; cada consulta reanudará desde su checkpoint.
+        spark.streams.awaitAnyTermination()
+    except Exception:
+        LOGGER.exception(
+            "Falló una consulta de streaming; el contenedor terminará "
+            "para que Docker la recupere desde el checkpoint."
+        )
+        raise
+    finally:
+        for query in queries:
+            try:
+                if query.isActive:
+                    query.stop()
+            except Exception:
+                LOGGER.exception("No fue posible detener una consulta de Spark.")
+        try:
+            spark.stop()
+        except Exception:
+            LOGGER.exception("No fue posible detener Spark limpiamente.")
 
 
 if __name__ == "__main__":

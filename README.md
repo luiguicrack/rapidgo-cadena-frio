@@ -289,7 +289,9 @@ Los datos se persisten en formato Parquet. Las lecturas procesadas y las alertas
 
 Las consultas de streaming utilizan rutas de checkpoint para conservar información del progreso de procesamiento y facilitar la recuperación de las consultas.
 
-Los checkpoints se encuentran asociados a las salidas correspondientes. Durante las pruebas no deben eliminarse indiscriminadamente, ya que contienen información necesaria para el estado del procesamiento.
+Los checkpoints se encuentran asociados a las salidas correspondientes. El servicio Spark se reinicia automáticamente ante fallos y reanuda el procesamiento desde esas rutas. No elimines los checkpoints al reiniciar el servicio.
+
+Las reglas de calidad y el procedimiento de recuperación se describen en [`docs/operacion-calidad-recuperacion.md`](docs/operacion-calidad-recuperacion.md).
 
 ## 12. Pruebas automatizadas e integración continua
 
