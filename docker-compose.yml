@@ -39,6 +39,7 @@ services:
   spark-streaming:
     image: apache/spark:3.5.1-python3
     container_name: coldchain-spark-streaming
+    restart: unless-stopped
     depends_on:
       kafka-init:
         condition: service_completed_successfully

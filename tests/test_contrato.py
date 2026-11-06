@@ -24,6 +24,12 @@ def test_falta_campo_obligatorio(campo):
 
 
 @pytest.mark.parametrize("campo,valor", [
+    ("event_id", ""),               # campo requerido vacío
+    ("team_id", ""),                # campo requerido vacío
+    ("order_id", ""),               # campo requerido vacío
+    ("vehicle_id", ""),             # campo requerido vacío
+    ("product_type", ""),           # campo requerido vacío
+    ("event_ts", ""),               # campo requerido vacío
     ("order_id", "PED-1001"),        # formato incorrecto
     ("vehicle_id", "VEH-001"),       # formato incorrecto
     ("product_type", "seco"),        # fuera del enum
