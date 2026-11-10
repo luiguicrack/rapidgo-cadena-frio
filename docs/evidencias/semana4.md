@@ -1,122 +1,74 @@
-\# Evidencias de integración – Semana 4
+﻿# Evidencias de integración - Semana 4
 
+**Proyecto:** RapidGo - Cadena de Frío
+**Grupo:** 1
+**Rama:** `steban`
 
+## 1. Preparación del entorno
 
-\*\*Proyecto:\*\* RapidGo – Cadena de frío  
+Se trabajó desde el repositorio del proyecto y se verificó la conexión con GitHub y la actualización de la rama de trabajo.
 
-\*\*Grupo:\*\* 1  
-
-\*\*Responsable de la evidencia:\*\* Steban Blanco  
-
-\*\*Rama:\*\* steban
-
-
-
-\## 1. Preparación del entorno
-
-
-
-Se trabajó desde el repositorio clonado en un segundo equipo. Se verificó la conexión con GitHub y se comprobó que la rama de trabajo estuviera actualizada.
-
-
-
-\## 2. Ejecución de Kafka
-
-
+## 2. Ejecución de Kafka
 
 Se inició el entorno mediante Docker Compose.
 
+Se verificó que el servicio Kafka estuviera funcionando y que existiera el tópico `rapidgo.coldchain.readings`, configurado con tres particiones y una réplica.
 
+**Resultado:** tópico creado y disponible para recibir eventos.
 
-Se verificó que el servicio Kafka estuviera funcionando y que existiera el topic `rapidgo.coldchain.readings`, configurado con tres particiones y una réplica.
+## 3. Generación de eventos
 
+Se ejecutó el productor en modo de prueba:
 
+```powershell
+python -m producer.producer --dry-run --max-eventos 5
+```
 
-\*\*Resultado:\*\* \[Completar con el resultado obtenido].
+**Resultado:** se generaron cinco eventos simulados en modo `dry-run`. Esta ejecución permitió comprobar la generación de datos, pero no representa cinco mensajes publicados en Kafka.
 
+## 4. Envío y recepción de mensajes
 
+Se realizaron pruebas de publicación y recepción de mensajes mediante Kafka y su consumidor de consola.
 
-\## 3. Generación y envío de eventos
+En una ejecución del consumidor se reportó la recepción de un total de 10 mensajes.
 
+**Resultado:** se comprobó la recepción de mensajes en Kafka durante la prueba realizada.
 
+## 5. Pruebas automatizadas
 
-Se ejecutó el productor para generar lecturas simuladas de temperatura y humedad.
+Se ejecutaron las pruebas del proyecto mediante:
 
+```powershell
+python -m pytest -v
+```
 
+**Resultado:** 51 pruebas aprobadas y 0 fallidas.
 
-Los eventos fueron validados utilizando el contrato JSON del proyecto y enviados a Kafka utilizando el identificador del pedido como clave.
+Las pruebas cubren el contrato de eventos, la generación de lecturas y las reglas de alerta.
 
+## 6. Integración continua
 
+Se verificó el workflow de GitHub Actions configurado en `.github/workflows/ci.yml`.
 
-\*\*Cantidad de eventos enviados:\*\* \[Completar].
+**Resultado:** ejecución correcta del workflow, según la revisión realizada en GitHub.
 
+## 7. Evidencias gráficas
 
+En esta carpeta se conservan capturas relacionadas con:
 
-\*\*Resultado:\*\* \[Indicar si los mensajes llegaron correctamente].
+- Inicio de los servicios Docker.
+- Configuración del tópico Kafka.
+- Generación de eventos.
+- Envío y recepción de mensajes.
+- Ejecución de las pruebas automatizadas.
+- Resultado del workflow de GitHub Actions.
 
+## 8. Conclusión
 
+Durante la Semana 4 se validaron los componentes implementados del proyecto RapidGo - Cadena de Frío.
 
-\## 4. Recepción de mensajes
+Se comprobó el funcionamiento local de Kafka, la generación de eventos, las pruebas de comunicación con el tópico y la ejecución de las pruebas automatizadas.
 
+La ejecución de Pytest finalizó con 51 pruebas aprobadas. Las evidencias recopiladas permiten documentar el avance realizado.
 
-
-Se utilizó un consumidor de Kafka para comprobar que los eventos enviados por el productor llegaran correctamente al topic.
-
-
-
-\*\*Resultado:\*\* \[Completar].
-
-
-
-\## 5. Pruebas automatizadas
-
-
-
-Se ejecutaron las pruebas del proyecto mediante pytest.
-
-
-
-\*\*Resultado:\*\* \[Cantidad de pruebas aprobadas y fallidas].
-
-
-
-También se verificó el workflow de integración continua de GitHub Actions.
-
-
-
-\*\*Resultado del workflow:\*\* \[Completar].
-
-
-
-\## 6. Evidencias
-
-
-
-Se adjuntan capturas de:
-
-
-
-\- Servicios de Docker en ejecución.
-
-\- Configuración del topic de Kafka.
-
-\- Productor enviando eventos.
-
-\- Consumidor recibiendo mensajes.
-
-\- Ejecución de las pruebas automatizadas.
-
-\- Workflow de GitHub Actions.
-
-
-
-\## 7. Conclusión
-
-
-
-Durante esta etapa se realizaron pruebas para comprobar la generación de eventos, su envío a Kafka y la recepción de los mensajes. También se verificó el funcionamiento de las pruebas automatizadas.
-
-
-
-Estas actividades permitieron comprobar el funcionamiento de los componentes probados y dejar evidencia del avance realizado durante la Semana 4.
-
+Las integraciones con Spark Structured Streaming, Data Lake y Airflow quedan identificadas como trabajo pendiente.
