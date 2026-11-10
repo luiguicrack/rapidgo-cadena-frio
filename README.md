@@ -41,8 +41,11 @@ rapidgo-cadena-frio/
 │       └── ci.yml
 ├── airflow/
 │   └── dags/
+│       └── rapidgo_orquestacion.py
 ├── datalake/
-│   └── README.md
+│   ├── raw/
+│   ├── processed/
+│   └── curated/
 ├── docs/
 │   ├── arquitectura.png
 │   ├── pruebas-y-ci.md
