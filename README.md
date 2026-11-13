@@ -649,19 +649,7 @@ El proyecto cuenta con checkpoints que registran el avance realizado durante las
 
 En el siguiente video se presenta una explicación general del proyecto, la arquitectura implementada, los componentes del repositorio y el funcionamiento del pipeline:
 
-**Enlace al video:** **[AGREGAR AQUÍ EL ENLACE DEL VIDEO FINAL]**
-
-El video puede incluir:
-
-- Presentación del problema de negocio.
-- Explicación de la arquitectura.
-- Recorrido por la estructura del repositorio.
-- Generación y envío de eventos.
-- Funcionamiento de Kafka.
-- Procesamiento y resultados del Data Lake.
-- Ejecución del DAG de Airflow.
-- Pruebas automatizadas y GitHub Actions.
-- Resultados y conclusiones del proyecto.
+**Enlace al video:** **https://youtu.be/p1HPheaYkqs**
 
 ---
 
